@@ -87,6 +87,7 @@ header.scrolled .brand img{height:44px;filter:none}
   transition:color .2s ease;
 }
 header.scrolled .nav-links a{color:var(--green-700)}
+header.scrolled .btn-outline{background:linear-gradient(135deg,var(--gold),var(--gold-bright));border-color:transparent;color:var(--green-900);box-shadow:0 14px 30px -12px rgba(194,160,74,.6)}
 .nav-links a::after{content:"";position:absolute;bottom:-2px;inset-inline-start:0;width:0;height:2px;background:var(--gold);transition:width .25s ease}
 .nav-links a:hover::after{width:100%}
 .nav-links a:hover{color:var(--gold)}
@@ -587,17 +588,21 @@ footer{background:var(--green-900);color:rgba(251,248,241,.75);padding:70px 0 30
         <div><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> مكة المكرمة وجدة — المملكة العربية السعودية</div>
       </div>
     </div>
-    <div class="form reveal">
-      <div class="fld"><label for="nm">الاسم</label><input id="nm" type="text" placeholder="اسمك الكريم"></div>
-      <div class="fld"><label for="ph">رقم الجوال</label><input id="ph" type="tel" placeholder="05X XXX XXXX"></div>
+    <form class="form reveal" id="leadForm" action="https://formsubmit.co/ajax/m.shafiee.osama@gmail.com" method="POST">
+      <div class="fld"><label for="nm">الاسم</label><input id="nm" name="الاسم" type="text" placeholder="اسمك الكريم" required></div>
+      <div class="fld"><label for="ph">رقم الجوال</label><input id="ph" name="رقم الجوال" type="tel" placeholder="05X XXX XXXX" required></div>
       <div class="fld"><label for="tp">نوع العقار</label>
-        <select id="tp"><option>شقة</option><option>فيلا / دور</option><option>قصر</option><option>مشروع عقاري (مطوّر)</option></select>
+        <select id="tp" name="نوع العقار"><option>شقة</option><option>فيلا / دور</option><option>قصر</option><option>مشروع عقاري (مطوّر)</option></select>
       </div>
-      <div class="fld"><label for="ms">ماذا تريد أن نؤتمت؟ (اختياري)</label><textarea id="ms" rows="3" placeholder="مثال: الإضاءة والتكييف والأمان للمجلس وغرف النوم"></textarea></div>
-      <button class="btn btn-gold" id="sendBtn">أرسل الطلب</button>
+      <div class="fld"><label for="ms">ماذا تريد أن نؤتمت؟ (اختياري)</label><textarea id="ms" name="التفاصيل" rows="3" placeholder="مثال: الإضاءة والتكييف والأمان للمجلس وغرف النوم"></textarea></div>
+      <input type="hidden" name="_subject" value="طلب استشارة جديد — مدى المبارك">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="_captcha" value="false">
+      <input type="text" name="_honey" style="display:none">
+      <button class="btn btn-gold" type="submit" id="sendBtn">أرسل الطلب</button>
       <div class="form-msg" id="formMsg">تم استلام طلبك — سنتواصل معك قريباً بإذن الله.</div>
-      <div class="form-note">نموذج توضيحي لأغراض العرض. اربطه بنظام إدارة العملاء لديك لاحقاً.</div>
-    </div>
+      <div class="form-note">سنتواصل معك خلال ٢٤ ساعة بإذن الله.</div>
+    </form>
   </div>
 </section>
 
@@ -675,14 +680,38 @@ function renderScene(i){
 tabs.forEach(t=>t.onclick=()=>renderScene(+t.dataset.i));
 renderScene(0);
 
-// form (demo)
-document.getElementById('sendBtn').onclick=()=>{
+// form -> FormSubmit (يصل الطلب على الإيميل)
+const leadForm=document.getElementById('leadForm');
+const showMsg=(text,ok)=>{
+  const msg=document.getElementById('formMsg');
+  msg.style.display='block';
+  msg.style.background=ok?'rgba(74,222,128,.14)':'rgba(220,38,38,.14)';
+  msg.style.borderColor=ok?'rgba(74,222,128,.4)':'rgba(220,38,38,.4)';
+  msg.style.color=ok?'#bbf7d0':'#fecaca';
+  msg.textContent=text;
+};
+leadForm.onsubmit=async(e)=>{
+  e.preventDefault();
   const nm=document.getElementById('nm').value.trim();
   const ph=document.getElementById('ph').value.trim();
-  const msg=document.getElementById('formMsg');
-  if(!nm||!ph){msg.style.display='block';msg.style.background='rgba(220,38,38,.14)';msg.style.borderColor='rgba(220,38,38,.4)';msg.style.color='#fecaca';msg.textContent='يرجى إدخال الاسم ورقم الجوال.';return;}
-  msg.style.display='block';msg.style.background='rgba(74,222,128,.14)';msg.style.borderColor='rgba(74,222,128,.4)';msg.style.color='#bbf7d0';msg.textContent='تم استلام طلبك — سنتواصل معك قريباً بإذن الله.';
-  document.getElementById('nm').value='';document.getElementById('ph').value='';document.getElementById('ms').value='';
+  if(!nm||!ph){showMsg('يرجى إدخال الاسم ورقم الجوال.',false);return;}
+  const btn=document.getElementById('sendBtn');
+  const original=btn.textContent;
+  btn.disabled=true;btn.textContent='جارٍ الإرسال…';
+  try{
+    const res=await fetch(leadForm.action,{
+      method:'POST',
+      headers:{'Accept':'application/json'},
+      body:new FormData(leadForm)
+    });
+    if(!res.ok)throw new Error('bad status');
+    showMsg('تم استلام طلبك — سنتواصل معك قريباً بإذن الله.',true);
+    leadForm.reset();
+  }catch(err){
+    showMsg('تعذّر إرسال الطلب الآن. حاول مرة أخرى أو تواصل معنا مباشرة.',false);
+  }finally{
+    btn.disabled=false;btn.textContent=original;
+  }
 };
 
 // reveal on scroll
